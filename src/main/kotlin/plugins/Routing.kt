@@ -1,4 +1,4 @@
-package com.onoff
+package com.onoff.plugins
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
