@@ -184,6 +184,11 @@ fun Application.configureRouting() {
             val response = repository.updateStockProduct(sales)
             call.respond(response)
         }
+
+        // ================== SYNC CONFIRM ENDPOINT ==================
+        post("/sync/confirm") {
+            handleSyncConfirm(call, logger)
+        }
     }
 }
 
@@ -385,3 +390,76 @@ private suspend fun handleGetSessionsByEstablishment(
     }
 }
 
+/**
+ * Handler para POST /sync/confirm
+ * Marca un registro EstablishmentPivot como sincronizado (isSync = 1)
+ */
+private suspend fun handleSyncConfirm(
+    call: ApplicationCall,
+    logger: Logger
+) {
+    try {
+        val request = call.receive<websocket.SyncConfirmRequest>()
+
+        // Validar campos requeridos
+        if (request.productId.isBlank() || request.establishmentId.isBlank() || request.pointOfSaleId.isBlank()) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                websocket.SyncConfirmResponse(
+                    success = false,
+                    message = "productId, establishmentId y pointOfSaleId son requeridos"
+                )
+            )
+            return
+        }
+
+        logger.info(
+            "Sync confirm request: establishment=${request.establishmentId}, " +
+            "pointOfSale=${request.pointOfSaleId}, product=${request.productId}"
+        )
+
+        // Ejecutar actualización en BD
+        val dao = database.establishmentPivot.EstablishmentPivotDao()
+        val updated = dao.confirmSync(
+            establishmentId = request.establishmentId,
+            pointOfSaleId = request.pointOfSaleId,
+            productId = request.productId
+        )
+
+        if (updated) {
+            logger.info(
+                "Sync confirmed: establishment=${request.establishmentId}, " +
+                "pointOfSale=${request.pointOfSaleId}, product=${request.productId}"
+            )
+            call.respond(
+                HttpStatusCode.OK,
+                websocket.SyncConfirmResponse(
+                    success = true,
+                    message = "Sincronización confirmada exitosamente"
+                )
+            )
+        } else {
+            logger.warn(
+                "Sync confirmation failed - record not found: establishment=${request.establishmentId}, " +
+                "pointOfSale=${request.pointOfSaleId}, product=${request.productId}"
+            )
+            call.respond(
+                HttpStatusCode.NotFound,
+                websocket.SyncConfirmResponse(
+                    success = false,
+                    message = "Registro no encontrado en la base de datos"
+                )
+            )
+        }
+
+    } catch (e: Exception) {
+        logger.error("Error in sync/confirm endpoint: ${e.message}", e)
+        call.respond(
+            HttpStatusCode.InternalServerError,
+            websocket.SyncConfirmResponse(
+                success = false,
+                message = "Error interno del servidor al procesar la sincronización"
+            )
+        )
+    }
+}

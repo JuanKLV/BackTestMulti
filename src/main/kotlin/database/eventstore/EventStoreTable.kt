@@ -22,22 +22,5 @@ object EventStoreTable : Table("event_store") {
     }
 }
 
-/**
- * Tabla para auditoría de sesiones WebSocket
- * Permite tracking de conectividad y troubleshooting
- */
-object WebSocketSessionTable : Table("websocket_sessions") {
-    val sessionId = varchar("session_id", 36)
-    val establishmentId = varchar("establishment_id", 255)
-    val posId = varchar("pos_id", 100).nullable()
-    val connectedAt = long("connected_at").default(System.currentTimeMillis())
-    val disconnectedAt = long("disconnected_at").nullable()
-    val lastHeartbeat = long("last_heartbeat").default(System.currentTimeMillis())
 
-    override val primaryKey = PrimaryKey(sessionId)
-
-    init {
-        index(isUnique = false, establishmentId)
-    }
-}
 

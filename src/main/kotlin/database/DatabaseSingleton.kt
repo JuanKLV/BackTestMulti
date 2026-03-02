@@ -1,8 +1,9 @@
 package database
 
 import database.products.ProductsTable
+import database.establishmentPivot.EstablishmentPivot
 import database.eventstore.EventStoreTable
-import database.eventstore.WebSocketSessionTable
+import database.websocket.WebSocketSessionTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -19,6 +20,7 @@ object DatabaseSingleton {
         transaction(dataBase) {
             SchemaUtils.create(
                 ProductsTable,
+                EstablishmentPivot,
                 EventStoreTable,
                 WebSocketSessionTable
             )

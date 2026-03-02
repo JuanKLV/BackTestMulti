@@ -18,6 +18,7 @@ data class SaleDto(
     val paidValue: Double = 0.0,
     val deliveryValue: Double = 0.0,
     val cashMoneyAdjustment: Int = 0,
+    val establishmentId: String = "",
     val isSync: Int = 0,
     var saleDetails: List<SaleDetailDto> = emptyList(),
     var salePayments: List<SalePaymentsDto> = emptyList()

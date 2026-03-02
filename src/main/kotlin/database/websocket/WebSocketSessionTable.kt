@@ -18,6 +18,7 @@ object WebSocketSessionTable : Table("websocket_sessions") {
     override val primaryKey = PrimaryKey(id)
 
     init {
+        index(isUnique = true, posId)
         index(isUnique = false, establishmentId)
         index(isUnique = false, isActive)
         index(isUnique = false, establishmentId, isActive)  // Índice compuesto para búsquedas frecuentes

@@ -41,3 +41,16 @@ data class ErrorResponse(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+@Serializable
+data class SyncConfirmRequest(
+    val productId: String,
+    val establishmentId: String,
+    val pointOfSaleId: String
+)
+
+@Serializable
+data class SyncConfirmResponse(
+    val success: Boolean,
+    val message: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
