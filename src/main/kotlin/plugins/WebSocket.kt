@@ -1,6 +1,7 @@
 package com.onoff.plugins
 
 import database.eventstore.EventStoreDao
+import database.websocket.WebSocketSessionDao
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.websocket.DefaultWebSocketServerSession
@@ -30,6 +31,7 @@ object WebSocketState {
     lateinit var connectionManager: ConnectionManager
     lateinit var eventBroadcaster: EventBroadcaster
     lateinit var eventStoreDao: EventStoreDao
+    lateinit var webSocketSessionDao: WebSocketSessionDao
 }
 
 /**
@@ -46,11 +48,13 @@ fun Application.configureWebSocket() {
     // Instanciar singletons
     val connectionManager = ConnectionManager()
     val eventStoreDao = EventStoreDao()
+    val webSocketSessionDao = WebSocketSessionDao()
     val eventBroadcaster = EventBroadcaster(connectionManager, eventStoreDao)
 
     // Guardar en objeto global singleton
     WebSocketState.connectionManager = connectionManager
     WebSocketState.eventStoreDao = eventStoreDao
+    WebSocketState.webSocketSessionDao = webSocketSessionDao
     WebSocketState.eventBroadcaster = eventBroadcaster
 
     // También guardar en atributos de aplicación para acceso desde contexto de Request

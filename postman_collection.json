@@ -1,0 +1,234 @@
+{
+  "info": {
+    "_postman_id": "multipos-websocket-collection",
+    "name": "MultiPOS Backend - WebSocket & REST API",
+    "description": "Colección lista para usar con MultiPOS Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "WebSocket",
+      "item": [
+        {
+          "name": "Connect Establishment 1 - POS 1",
+          "event": [
+            {
+              "listen": "message",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Message received:', data);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {}
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:8080/ws/est-123/pos-001",
+              "protocol": "ws",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "ws",
+                "est-123",
+                "pos-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Connect Establishment 1 - POS 2",
+          "event": [
+            {
+              "listen": "message",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Message received:', data);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:8080/ws/est-123/pos-002",
+              "protocol": "ws",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "ws",
+                "est-123",
+                "pos-002"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Connect Establishment 2 - POS 1",
+          "event": [
+            {
+              "listen": "message",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('Message received:', data);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:8080/ws/est-456/pos-001",
+              "protocol": "ws",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "ws",
+                "est-456",
+                "pos-001"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "REST Events",
+      "item": [
+        {
+          "name": "Inventory Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"establishmentId\": \"est-123\",\n  \"productId\": \"prod-001\",\n  \"productName\": \"Coca Cola\",\n  \"previousQuantity\": 100,\n  \"newQuantity\": 95,\n  \"changeReason\": \"SALE\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/events/inventory-update",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "events",
+                "inventory-update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Portfolio Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"establishmentId\": \"est-123\",\n  \"portfolioId\": \"port-789\",\n  \"portfolioName\": \"Main Portfolio\",\n  \"totalValue\": 50000.00,\n  \"changeType\": \"UPDATE\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/events/portfolio-update",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "events",
+                "portfolio-update"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Monitoring",
+      "item": [
+        {
+          "name": "Get WebSocket Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/ws/stats",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "ws",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "WS_BASE_URL",
+      "value": "ws://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "ESTABLISHMENT_1",
+      "value": "est-123",
+      "type": "string"
+    },
+    {
+      "key": "ESTABLISHMENT_2",
+      "value": "est-456",
+      "type": "string"
+    },
+    {
+      "key": "POS_1",
+      "value": "pos-001",
+      "type": "string"
+    },
+    {
+      "key": "POS_2",
+      "value": "pos-002",
+      "type": "string"
+    }
+  ]
+}
+

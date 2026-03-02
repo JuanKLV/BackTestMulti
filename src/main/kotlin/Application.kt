@@ -1,3 +1,5 @@
+package com.onoff
+
 import database.DatabaseSingleton
 import plugins.configureRouting
 import plugins.configureSerialization

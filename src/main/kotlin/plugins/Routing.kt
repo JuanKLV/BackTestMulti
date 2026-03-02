@@ -1,4 +1,4 @@
-package plugins
+package com.onoff.plugins
 
 import com.onoff.plugins.WebSocketState
 import io.ktor.server.application.Application
@@ -25,7 +25,12 @@ import websocket.EventBroadcaster
 import websocket.EventType
 import websocket.InventoryUpdatedPayload
 import websocket.PortfolioUpdatedPayload
+import websocket.WebSocketMessage
+import websocket.ConnectionAckPayload
+import io.ktor.websocket.Frame
 import java.util.UUID
+import database.websocket.WebSocketSessionDao
+import database.websocket.WebSocketSessionRecord
 
 fun Application.configureRouting() {
     val logger = LoggerFactory.getLogger("Routing")
@@ -36,6 +41,7 @@ fun Application.configureRouting() {
         webSocket("/ws/{establishmentId}/{posId}") {
             val establishmentId = call.parameters["establishmentId"]
             val posId = call.parameters["posId"]
+            lateinit var sessionId: String
 
             // Validar parámetros
             if (establishmentId.isNullOrBlank()) {
@@ -51,14 +57,28 @@ fun Application.configureRouting() {
                 "WebSocket connection attempt: establishmentId=$establishmentId, posId=$posId"
             )
 
-            // Usar singletons globales del WebSocket plugin
+            // Registrar sesión
             try {
+                sessionId = UUID.randomUUID().toString()
                 WebSocketState.connectionManager.register(
                     establishmentId = establishmentId,
-                    sessionId = UUID.randomUUID().toString(),
+                    sessionId = sessionId,
                     session = this,
                     posId = posId
                 )
+
+                // Guardar sesión en BD
+                WebSocketState.webSocketSessionDao.saveSession(
+                    WebSocketSessionRecord(
+                        id = sessionId,
+                        establishmentId = establishmentId,
+                        posId = posId,
+                        connectedAt = System.currentTimeMillis(),
+                        isActive = true
+                    )
+                )
+
+                logger.info("WebSocket registered: sessionId=$sessionId, establishment=$establishmentId, posId=$posId")
             } catch (e: Exception) {
                 logger.error("Error registering WebSocket session: ${e.message}", e)
                 this.close(CloseReason(
@@ -66,6 +86,59 @@ fun Application.configureRouting() {
                     "Failed to register connection"
                 ))
                 return@webSocket
+            }
+
+            try {
+                // Enviar CONNECTION_ACK
+                try {
+                    val ackPayload = ConnectionAckPayload(
+                        connectionId = sessionId,
+                        establishmentId = establishmentId,
+                        posId = posId
+                    )
+
+                    val ackMessage = WebSocketMessage(
+                        type = EventType.CONNECTION_ACK.name,
+                        establishmentId = establishmentId,
+                        posId = posId,
+                        payload = json.parseToJsonElement(
+                            json.encodeToString(
+                                ConnectionAckPayload.serializer(),
+                                ackPayload
+                            )
+                        )
+                    )
+
+                    this.send(Frame.Text(json.encodeToString(WebSocketMessage.serializer(), ackMessage)))
+                    logger.debug("CONNECTION_ACK sent to sessionId=$sessionId")
+                } catch (e: Exception) {
+                    logger.error("Error sending CONNECTION_ACK: ${e.message}", e)
+                }
+
+                // Escuchar mensajes entrantes
+                @Suppress("UNUSED_VARIABLE")
+                for (_frame in incoming) {
+                    logger.debug("Received frame from $sessionId")
+                    // Aquí puedes procesar mensajes del cliente si lo necesitas
+                }
+
+            } catch (e: Exception) {
+                logger.error("WebSocket error for session $sessionId: ${e.message}", e)
+            } finally {
+                // Limpiar al desconectar
+                try {
+                    WebSocketState.connectionManager.unregister(establishmentId, sessionId)
+
+                    // Actualizar sesión como desconectada en BD
+                    WebSocketState.webSocketSessionDao.updateSessionDisconnected(
+                        sessionId = sessionId,
+                        disconnectedAt = System.currentTimeMillis()
+                    )
+
+                    logger.info("WebSocket unregistered: sessionId=$sessionId, establishment=$establishmentId")
+                } catch (e: Exception) {
+                    logger.error("Error unregistering session $sessionId: ${e.message}", e)
+                }
             }
 
             // TODO: Validar que establishmentId existe en BD
@@ -85,6 +158,23 @@ fun Application.configureRouting() {
         // ================== MONITORING ENDPOINT ==================
         get("/ws/stats") {
             handleGetStats(call, connectionManager = WebSocketState.connectionManager, logger)
+        }
+
+        // ================== WEBSOCKET SESSIONS ENDPOINT ==================
+        get("/ws/sessions") {
+            handleGetSessions(call, webSocketSessionDao = WebSocketState.webSocketSessionDao, logger)
+        }
+
+        get("/ws/sessions/{establishmentId}") {
+            val establishmentId = call.parameters["establishmentId"]
+            if (establishmentId.isNullOrBlank()) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(error = "establishmentId parameter is required")
+                )
+                return@get
+            }
+            handleGetSessionsByEstablishment(call, establishmentId, webSocketSessionDao = WebSocketState.webSocketSessionDao, logger)
         }
     }
 }
@@ -240,6 +330,49 @@ private suspend fun handleGetStats(
         call.respond(
             HttpStatusCode.InternalServerError,
             ErrorResponse(error = "Failed to get WebSocket stats")
+        )
+    }
+}
+
+/**
+ * Handler para GET /ws/sessions
+ * Retorna todas las sesiones WebSocket activas
+ */
+private suspend fun handleGetSessions(
+    call: ApplicationCall,
+    webSocketSessionDao: database.websocket.WebSocketSessionDao,
+    logger: Logger
+) {
+    try {
+        val sessions = webSocketSessionDao.getAllActiveSessions()
+        call.respond(HttpStatusCode.OK, sessions)
+    } catch (e: Exception) {
+        logger.error("Error getting WebSocket sessions: ${e.message}", e)
+        call.respond(
+            HttpStatusCode.InternalServerError,
+            ErrorResponse(error = "Failed to get WebSocket sessions")
+        )
+    }
+}
+
+/**
+ * Handler para GET /ws/sessions/{establishmentId}
+ * Retorna sesiones WebSocket activas por establecimiento
+ */
+private suspend fun handleGetSessionsByEstablishment(
+    call: ApplicationCall,
+    establishmentId: String,
+    webSocketSessionDao: database.websocket.WebSocketSessionDao,
+    logger: Logger
+) {
+    try {
+        val sessions = webSocketSessionDao.getActiveSessions(establishmentId)
+        call.respond(HttpStatusCode.OK, sessions)
+    } catch (e: Exception) {
+        logger.error("Error getting WebSocket sessions for establishment: ${e.message}", e)
+        call.respond(
+            HttpStatusCode.InternalServerError,
+            ErrorResponse(error = "Failed to get WebSocket sessions")
         )
     }
 }
