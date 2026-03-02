@@ -1,6 +1,6 @@
 package com.onoff.plugins
 
-import com.onoff.plugins.WebSocketState
+import com.onoff.plugins.sale.SaleRepository
 import io.ktor.server.application.Application
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.webSocket
@@ -31,10 +31,12 @@ import io.ktor.websocket.Frame
 import java.util.UUID
 import database.websocket.WebSocketSessionDao
 import database.websocket.WebSocketSessionRecord
+import mappers.response.SaleDto
 
 fun Application.configureRouting() {
     val logger = LoggerFactory.getLogger("Routing")
     val json = Json
+    val repository = SaleRepository()
 
     routing {
         // ================== WEBSOCKET ENDPOINT ==================
@@ -177,11 +179,11 @@ fun Application.configureRouting() {
             handleGetSessionsByEstablishment(call, establishmentId, webSocketSessionDao = WebSocketState.webSocketSessionDao, logger)
         }
 
-post("/sales") {
-    val sales = call.receive<SaleDto>()
-    val response = repository.updateStockProduct(sales)
-    call.respond(response)
-}
+        post("/sales") {
+            val sales = call.receive<SaleDto>()
+            val response = repository.updateStockProduct(sales)
+            call.respond(response)
+        }
     }
 }
 

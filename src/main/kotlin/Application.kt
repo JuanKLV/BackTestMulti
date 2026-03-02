@@ -1,7 +1,7 @@
 package com.onoff
 
+import com.onoff.plugins.configureRouting
 import database.DatabaseSingleton
-import plugins.configureRouting
 import plugins.configureSerialization
 import com.onoff.plugins.configureWebSocket
 import io.ktor.http.HttpHeaders
