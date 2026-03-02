@@ -176,6 +176,12 @@ fun Application.configureRouting() {
             }
             handleGetSessionsByEstablishment(call, establishmentId, webSocketSessionDao = WebSocketState.webSocketSessionDao, logger)
         }
+
+post("/sales") {
+    val sales = call.receive<SaleDto>()
+    val response = repository.updateStockProduct(sales)
+    call.respond(response)
+}
     }
 }
 
