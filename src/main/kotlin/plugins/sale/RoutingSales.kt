@@ -1,4 +1,4 @@
-package com.onoff
+package com.onoff.plugins
 
 import com.onoff.plugins.sale.SaleRepository
 import io.ktor.server.application.*
