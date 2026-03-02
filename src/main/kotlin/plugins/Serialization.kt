@@ -1,4 +1,4 @@
-package com.onoff.plugins
+package plugins
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*

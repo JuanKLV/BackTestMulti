@@ -1,6 +1,8 @@
-package com.onoff.database
+package database
 
 import database.products.ProductsTable
+import database.eventstore.EventStoreTable
+import database.eventstore.WebSocketSessionTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -15,7 +17,11 @@ object DatabaseSingleton {
             password = ConstantsKotlin.PASSWORD,
         )
         transaction(dataBase) {
-            SchemaUtils.create(ProductsTable)
+            SchemaUtils.create(
+                ProductsTable,
+                EventStoreTable,
+                WebSocketSessionTable
+            )
         }
     }
 }

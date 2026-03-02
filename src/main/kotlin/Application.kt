@@ -1,8 +1,7 @@
-package com.onoff
-
-import com.onoff.database.DatabaseSingleton
-import com.onoff.plugins.configureRouting
-import com.onoff.plugins.configureSerialization
+import database.DatabaseSingleton
+import plugins.configureRouting
+import plugins.configureSerialization
+import com.onoff.plugins.configureWebSocket
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.server.application.*
@@ -27,6 +26,7 @@ fun Application.module() {
         allowMethod(HttpMethod.Delete)
     }
     configureSerialization()
+    configureWebSocket()
     configureRouting()
     DatabaseSingleton.init()
 }
