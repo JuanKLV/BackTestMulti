@@ -2,6 +2,7 @@ package com.onoff.plugins.sale
 
 import database.establishmentPivot.EstablishmentPivotDao
 import database.products.ProductsDao
+import database.products.ProductsModel
 import kotlinx.coroutines.Dispatchers
 import mappers.response.SaleDto
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -22,12 +23,6 @@ class SaleRepository {
                 "pointOfSaleId is required in sale DTO"
             }
 
-            // Process each sale detail
-            sale.saleDetails.forEach { detail ->
-                // Save or update product details (UPSERT)
-                // This ensures product exists and quantity is current
-                productsDao.saveProduct(detail)
-            }
 
             // Now process stock deductions within a transaction
             val result = newSuspendedTransaction(Dispatchers.IO) {
@@ -60,6 +55,10 @@ class SaleRepository {
         } catch (e: Exception) {
             throw RuntimeException("Error processing sale: ${e.message}", e)
         }
+    }
+
+    suspend fun saveProduct(products: ProductsModel) {
+        productsDao.saveProduct(products)
     }
 
 }

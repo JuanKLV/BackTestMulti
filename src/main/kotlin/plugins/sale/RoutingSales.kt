@@ -1,6 +1,8 @@
 package com.onoff.plugins
 
 import com.onoff.plugins.sale.SaleRepository
+import database.products.ProductsModel
+import database.products.ProductsTable
 import io.ktor.server.application.Application
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.webSocket
@@ -182,6 +184,12 @@ fun Application.configureRouting() {
         post("/sales") {
             val sales = call.receive<SaleDto>()
             val response = repository.updateStockProduct(sales)
+            call.respond(response)
+        }
+
+        post("/product") {
+            val products = call.receive<ProductsModel>()
+            val response = repository.saveProduct(products)
             call.respond(response)
         }
 
