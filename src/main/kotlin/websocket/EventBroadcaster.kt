@@ -181,6 +181,65 @@ class EventBroadcaster(
     }
 
     /**
+     * Broadcast de productos completos a sesiones específicas que no han sido sincronizadas
+     * Se utiliza después de una venta para notificar otros POS sobre cambios de inventario
+     */
+    suspend fun broadcastProductsToSessions(
+        establishmentId: String,
+        products: List<database.products.ProductsModel>,
+        sessionIds: List<String>
+    ) {
+        if (products.isEmpty() || sessionIds.isEmpty()) {
+            logger.debug("No products or sessions to broadcast")
+            return
+        }
+
+        try {
+            for (product in products) {
+                val envelope = WebSocketMessage(
+                    id = UUID.randomUUID().toString(),
+                    type = EventType.PRODUCT.name,
+                    establishmentId = establishmentId,
+                    payload = json.parseToJsonElement(
+                        json.encodeToString(database.products.ProductsModel.serializer(), product)
+                    ),
+                    product = product,
+                    timestamp = System.currentTimeMillis()
+                )
+
+                val serializedEvent = json.encodeToString(
+                    WebSocketMessage.serializer(),
+                    envelope
+                )
+
+                // Enviar a las sesiones específicas
+                for (sessionId in sessionIds) {
+                    try {
+                        connectionManager.sendToSession(
+                            establishmentId = establishmentId,
+                            sessionId = sessionId,
+                            message = serializedEvent
+                        )
+                    } catch (e: Exception) {
+                        logger.warn("Failed to send product to session $sessionId: ${e.message}")
+                    }
+                }
+
+                logger.info(
+                    "Broadcasted product ${product.id} to ${sessionIds.size} unsynced sessions " +
+                    "in establishment $establishmentId"
+                )
+            }
+        } catch (e: Exception) {
+            logger.error(
+                "Error broadcasting products: establishment=$establishmentId, " +
+                "error=${e.message}",
+                e
+            )
+        }
+    }
+
+    /**
      * Obtener eventos recientes para un cliente que se reconecta
      * Permite sincronización sin perder eventos durante desconexión
      */

@@ -36,7 +36,7 @@ class EventService(
 
             val message = WebSocketMessage(
                 id = java.util.UUID.randomUUID().toString(),
-                type = EventType.INVENTORY_UPDATED.name,
+                type = EventType.PRODUCT.name,
                 establishmentId = establishmentId,
                 payload = json.parseToJsonElement(
                     json.encodeToString(payload)

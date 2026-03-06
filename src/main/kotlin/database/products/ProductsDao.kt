@@ -23,11 +23,14 @@ import database.products.ProductsTable.subCategoryName
 import database.products.ProductsTable.unitCost
 import database.products.ProductsTable.unitMeasureId
 import database.products.ProductsTable.urlImage
-import database.websocket.WebSocketSessionTable.isActive
 import kotlinx.coroutines.Dispatchers
+import mappers.response.SaleDetailDto
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.update
 
 class ProductsDao {
 
@@ -54,39 +57,57 @@ class ProductsDao {
         categoryName = row[categoryName],
         subCategoryId = row[subCategoryId],
         subCategoryName = row[subCategoryName],
-        unitMeasureId = row[unitMeasureId],
-        isActive = row[isActive]
+        unitMeasureId = row[unitMeasureId]
     )
 
     suspend fun saveProduct(products: ProductsModel) = dbQueryProducts {
-        ProductsTable.insert {
-            it[id] = products.id
-            it[name] = products.name
-            it[description] = products.description
-            it[stock] = products.stock
-            it[initialStock] = products.initialStock
-            it[minimumStock] = products.minimumStock
-            it[urlImage] = products.urlImage
-            it[unitCost] = products.unitCost
-            it[price] = products.price
-            it[averageCost] = products.averageCost
-            it[isNotAlterInventory] = products.isNotAlterInventory
-            it[establishmentId] = products.establishmentId
-            it[productBusinessId] = products.productBusinessId
-            it[productBusinessName] = products.productBusinessName
-            it[barCode] = products.barCode
-            it[brandName] = products.brandName
-            it[brandId] = products.brandId
-            it[manufacturerId] = products.manufacturerId
-            it[categoryName] = products.categoryName
-            it[categoryId] = products.categoryId
-            it[subCategoryName] = products.subCategoryName
-            it[subCategoryId] = products.subCategoryId
-            it[unitMeasureId] = products.unitMeasureId
+        val product = ProductsTable.select { id.eq(products.id) }.singleOrNull()
+        if (product == null) {
+            ProductsTable.insert {
+                it[id] = products.id
+                it[name] = products.name
+                it[description] = products.description
+                it[stock] = products.stock
+                it[initialStock] = products.initialStock
+                it[minimumStock] = products.minimumStock
+                it[urlImage] = products.urlImage
+                it[unitCost] = products.unitCost
+                it[price] = products.price
+                it[averageCost] = products.averageCost
+                it[isNotAlterInventory] = products.isNotAlterInventory
+                it[establishmentId] = products.establishmentId
+                it[productBusinessId] = products.productBusinessId
+                it[productBusinessName] = products.productBusinessName
+                it[barCode] = products.barCode
+                it[brandName] = products.brandName
+                it[brandId] = products.brandId
+                it[manufacturerId] = products.manufacturerId
+                it[categoryName] = products.categoryName
+                it[categoryId] = products.categoryId
+                it[subCategoryName] = products.subCategoryName
+                it[subCategoryId] = products.subCategoryId
+                it[unitMeasureId] = products.unitMeasureId
+            }
         }
     }
 
     private suspend fun <T> dbQueryProducts(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
+
+    /**
+     * Obtiene los productos por IDs después de una actualización de stock.
+     * Usado para enviar los datos completos del producto a través de WebSocket.
+     */
+    suspend fun getProductsByIds(productIds: List<String>): List<ProductsModel> = dbQueryProducts {
+        ProductsTable
+            .select { id inList productIds }
+            .map { tableToProducts(it) }
+    }
+
+    fun updateProductStock(detail: SaleDetailDto) {
+        ProductsTable.update({ id eq detail.productId }) {
+            it[stock] = stock - detail.quantity
+        }
+    }
 
 }

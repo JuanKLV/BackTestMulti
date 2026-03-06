@@ -230,7 +230,7 @@ private suspend fun handleInventoryUpdate(
         // Broadcast del evento
         eventBroadcaster.broadcastEvent(
             establishmentId = request.establishmentId,
-            eventType = EventType.INVENTORY_UPDATED,
+            eventType = EventType.PRODUCT,
             payload = json.parseToJsonElement(
                 json.encodeToString(
                     InventoryUpdatedPayload.serializer(),
@@ -425,40 +425,6 @@ private suspend fun handleSyncConfirm(
             "Sync confirm request: establishment=${request.establishmentId}, " +
             "pointOfSale=${request.pointOfSaleId}, product=${request.productId}"
         )
-
-        // Ejecutar actualización en BD
-        val dao = database.establishmentPivot.EstablishmentPivotDao()
-        val updated = dao.confirmSync(
-            establishmentId = request.establishmentId,
-            pointOfSaleId = request.pointOfSaleId,
-            productId = request.productId
-        )
-
-        if (updated) {
-            logger.info(
-                "Sync confirmed: establishment=${request.establishmentId}, " +
-                "pointOfSale=${request.pointOfSaleId}, product=${request.productId}"
-            )
-            call.respond(
-                HttpStatusCode.OK,
-                websocket.SyncConfirmResponse(
-                    success = true,
-                    message = "Sincronización confirmada exitosamente"
-                )
-            )
-        } else {
-            logger.warn(
-                "Sync confirmation failed - record not found: establishment=${request.establishmentId}, " +
-                "pointOfSale=${request.pointOfSaleId}, product=${request.productId}"
-            )
-            call.respond(
-                HttpStatusCode.NotFound,
-                websocket.SyncConfirmResponse(
-                    success = false,
-                    message = "Registro no encontrado en la base de datos"
-                )
-            )
-        }
 
     } catch (e: Exception) {
         logger.error("Error in sync/confirm endpoint: ${e.message}", e)

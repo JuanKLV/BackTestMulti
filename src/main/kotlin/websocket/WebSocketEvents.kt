@@ -1,5 +1,6 @@
 package websocket
 
+import database.products.ProductsModel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import java.util.*
@@ -8,7 +9,7 @@ import java.util.*
  * Tipos de eventos que se pueden sincronizar entre POS
  */
 enum class EventType {
-    INVENTORY_UPDATED,
+    PRODUCT,
     PORTFOLIO_UPDATED,
     HEARTBEAT,
     CONNECTION_ACK,
@@ -26,6 +27,7 @@ data class WebSocketMessage(
     val establishmentId: String,
     val posId: String? = null,
     val payload: JsonElement,
+    val product: ProductsModel? = null,
     val timestamp: Long = System.currentTimeMillis()
 )
 

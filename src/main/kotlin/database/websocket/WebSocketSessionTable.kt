@@ -14,6 +14,7 @@ object WebSocketSessionTable : Table("websocket_sessions") {
     val disconnectedAt = long("disconnected_at").nullable()
     val isActive = bool("is_active").default(true)
     val lastHeartbeat = long("last_heartbeat").default(System.currentTimeMillis())
+    val isSync = bool("isSync").default(false)
 
     override val primaryKey = PrimaryKey(id)
 
